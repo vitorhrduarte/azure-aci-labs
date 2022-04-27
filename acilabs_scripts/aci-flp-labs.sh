@@ -842,12 +842,15 @@ function lab_scenario_10 () {
   #"Login With Another SP"
   #bash $AZ_LOGIN_STRING &>/dev/null
 
+  echo "Waiting... 60s"
+  sleep 60
+  echo ""
   echo "Before Change Login"
   az account list -o json
   echo ""
   echo "Do Az Login"
   echo ""
-  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT
+  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT --debug
   echo ""
   echo "After login"
   az account list -o json
