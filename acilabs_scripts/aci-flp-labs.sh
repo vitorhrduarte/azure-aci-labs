@@ -841,10 +841,17 @@ function lab_scenario_10 () {
   #"Login With Another SP"
   #bash $AZ_LOGIN_STRING &>/dev/null
 
-
+  echo "Before Change Login"
+  az account list -o json
+  echo ""
   echo "Do Az Login"
-  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT &>/dev/null
-
+  echo "Pass: ${ARR_SP_DETAILS[0]}"
+  echo "User: ${ARR_SP_DETAILS[1]}"
+  echo ""
+  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT
+  echo ""
+  echo "After login"
+  az account list -o json
 
   ## Create Container
   ERROR_MESSAGE="$(az container create \
