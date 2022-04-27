@@ -846,9 +846,10 @@ function lab_scenario_10 () {
   echo ""
   echo "Do Az Login"
   echo "Pass: ${ARR_SP_DETAILS[0]}"
-  echo "User: ${ARR_SP_DETAILS[1]}"
+  echo "AppID: ${ARR_SP_DETAILS[1]}"
+  echo "User:  ${ARR_SP_DETAILS[2]}"
   echo ""
-  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT
+  az login --service-principal --username ${ARR_SP_DETAILS[2]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT
   echo ""
   echo "After login"
   az account list -o json
