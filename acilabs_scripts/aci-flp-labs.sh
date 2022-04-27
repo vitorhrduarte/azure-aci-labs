@@ -1,4 +1,4 @@
-#!/bi/bash
+#!/bin/bash
 
 # script name: aci-flp-labs.sh
 # Version v0.0.2 20220204
