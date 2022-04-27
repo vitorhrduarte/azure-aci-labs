@@ -836,10 +836,15 @@ function lab_scenario_10 () {
   #echo ${ARR_SP_DETAILS[2]}
   #echo $TENANT
 
-  AZ_LOGIN_STRING=$(echo "az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT") 
+  #AZ_LOGIN_STRING=$(echo "az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT") 
 
   #"Login With Another SP"
-  bash $AZ_LOGIN_STRING &>/dev/null
+  #bash $AZ_LOGIN_STRING &>/dev/null
+
+
+  echo "Do Az Login"
+  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT &>/dev/null
+
 
   ## Create Container
   ERROR_MESSAGE="$(az container create \
