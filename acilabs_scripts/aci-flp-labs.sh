@@ -830,11 +830,11 @@ function lab_scenario_10 () {
   TENANT=$(az account list \
     --output json | jq -r ".[] | select ( .isDefault == "true" ) | [ .tenantId] | @tsv")
 
-  #For Debug
-  #echo ${ARR_SP_DETAILS[0]}
-  #echo ${ARR_SP_DETAILS[1]}
-  #echo ${ARR_SP_DETAILS[2]}
-  #echo $TENANT
+  For Debug
+  echo ${ARR_SP_DETAILS[0]}
+  echo ${ARR_SP_DETAILS[1]}
+  echo ${ARR_SP_DETAILS[2]}
+  echo $TENANT
 
   #AZ_LOGIN_STRING=$(echo "az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT") 
 
@@ -849,7 +849,7 @@ function lab_scenario_10 () {
   echo "AppID: ${ARR_SP_DETAILS[1]}"
   echo "User:  ${ARR_SP_DETAILS[2]}"
   echo ""
-  az login --service-principal --username ${ARR_SP_DETAILS[2]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT
+  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT
   echo ""
   echo "After login"
   az account list -o json
