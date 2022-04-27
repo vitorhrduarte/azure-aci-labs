@@ -830,30 +830,15 @@ function lab_scenario_10 () {
   TENANT=$(az account list \
     --output json | jq -r ".[] | select ( .isDefault == "true" ) | [ .tenantId] | @tsv")
 
-  echo "For Debug"
-  echo ""
-  echo "Password: ${ARR_SP_DETAILS[0]}"
-  echo "AppId: ${ARR_SP_DETAILS[1]}"
-  echo "DisplayName: ${ARR_SP_DETAILS[2]}"
-  echo "Tenant: $TENANT"
-
   #AZ_LOGIN_STRING=$(echo "az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT") 
-
   #"Login With Another SP"
   #bash $AZ_LOGIN_STRING &>/dev/null
 
-  echo "Waiting... 60s"
+  #echo "Waiting... 60s"
   sleep 60
-  echo ""
-  echo "Before Change Login"
-  az account list -o json
-  echo ""
-  echo "Do Az Login"
-  echo ""
-  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT --debug
-  echo ""
-  echo "After login"
-  az account list -o json
+  
+  # Do the SP Login
+  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT  &>/dev/null
 
   ## Create Container
   ERROR_MESSAGE="$(az container create \
