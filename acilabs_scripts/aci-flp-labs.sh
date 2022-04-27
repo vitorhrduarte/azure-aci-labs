@@ -828,7 +828,7 @@ function lab_scenario_10 () {
   --scopes $ACI_RG_URI 2>/dev/null | jq -r ". | [ .password, .appId , .displayName ] | @tsv"))
 
   TENANT=$(az account list \
-    --output json | jq -r ".[] | select ( .isDefault == \"true\" ) | [ .tenantId] | @tsv")
+    --output json | jq -r ".[] | select ( .isDefault == "true" ) | [ .tenantId] | @tsv")
 
   echo "For Debug"
   echo ""
