@@ -828,13 +828,14 @@ function lab_scenario_10 () {
   --scopes $ACI_RG_URI 2>/dev/null | jq -r ". | [ .password, .appId , .displayName ] | @tsv"))
 
   TENANT=$(az account list \
-    --output json | jq -r ".[] | select ( .isDefault == "true" ) | [ .tenantId] | @tsv")
+    --output json | jq -r ".[] | select ( .isDefault == \"true\" ) | [ .tenantId] | @tsv")
 
-  For Debug
-  echo ${ARR_SP_DETAILS[0]}
-  echo ${ARR_SP_DETAILS[1]}
-  echo ${ARR_SP_DETAILS[2]}
-  echo $TENANT
+  echo "For Debug"
+  echo ""
+  echo "Password: ${ARR_SP_DETAILS[0]}"
+  echo "AppId: ${ARR_SP_DETAILS[1]}"
+  echo "DisplayName: ${ARR_SP_DETAILS[2]}"
+  echo "Tenant: $TENANT"
 
   #AZ_LOGIN_STRING=$(echo "az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT") 
 
@@ -845,9 +846,6 @@ function lab_scenario_10 () {
   az account list -o json
   echo ""
   echo "Do Az Login"
-  echo "Pass: ${ARR_SP_DETAILS[0]}"
-  echo "AppID: ${ARR_SP_DETAILS[1]}"
-  echo "User:  ${ARR_SP_DETAILS[2]}"
   echo ""
   az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT
   echo ""
