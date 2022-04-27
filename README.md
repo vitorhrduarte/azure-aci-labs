@@ -7,7 +7,7 @@ Any time the labs script require an update the github actions can be use to trig
 
 Here is the general usage for the image and aci-flp-labs tool:
 
-Run in docker: `docker run -it sturrent/aci-flp-labs:latest`
+Run in docker: `docker run -it typeoneg/aci-flp-labs:latest`
 
 aci-flp-labs tool usage:
 ```
