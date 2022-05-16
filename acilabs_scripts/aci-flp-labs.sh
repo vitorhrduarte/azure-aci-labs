@@ -113,10 +113,24 @@ function print_usage_text () {
     echo -e "$NAME_EXEC usage: $NAME_EXEC -l <LAB#> -u <USER_ALIAS> [-v|--validate] [-r|--region] [-h|--help] [--version]\n"
     echo -e "\nHere is the list of current labs available:\n
 *************************************************************************************
-*\t 1. ACI deployment on existing resource group fails
-*\t 2. ACI deployed with wrong image
-*\t 3. ACI deployment with Azure Log Analytics
-*\t 4. TBA
+CORE LABS:
+*\t 1. ACI deployment failure configuration
+*\t 2. ACI deployment authorization failed
+*\t 3. ACI connection issue between 2 container groups V1
+*\t 4. ACI deployment failed netwwork configuration V1
+*\t 5. ACI deployment failed with Log analytics
+*\t 6. ACI container create failure with Azure File mount
+*\t 7. ACI deployment failure with Storage account
+*\t 8. ACI container create image pull failure V1
+
+
+EXTRA LABS:
+*\t 9. ACI deployment failure on pre-existing vnet
+*\t 10. ACI container continuous restart issue
+*\t 11. ACI container create image pull failure V2
+*\t 12. ACI deployment failed netwwork configuration V2 
+*\t 13. ACI connection issue between 2 container groups V2
+*\t 14. ACI connection issue to container
 *************************************************************************************\n"
 }
 
@@ -798,30 +812,6 @@ function lab_scenario_7_validation () {
 }
 
 
-
-
-
-function lab_scenario_8_validation () {
-    ACI_NAME=aci-labs-ex$LAB_SCENARIO-$USER_ALIAS
-    RESOURCE_GROUP=aci-labs-ex$LAB_SCENARIO-rg-$USER_ALIAS
-    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
-
-    ACI_STATUS=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME &>/dev/null; echo $?)
-    if [ $ACI_STATUS -eq 0 ]
-    then
-        echo -e "\n\n========================================================"
-        echo -e "\nContainer Group $ACI_NAME looks good now!\n"
-        echo -e "Please run the following commands to delete the resources for the lab."
-        echo -e "az group delete --name <RESOURCE_GROUP> --yes"
-        echo -e "az ad sp delete --id <ACILabSPAppID>"
-    else
-        echo -e "\n--> Error: Scenario $LAB_SCENARIO is still FAILED\n\n"
-    echo -e "The yaml file acilab.yaml is in your current path. Use our tools to identify the cause of the customer's issue."
-    echo -e "Once you find the cause of the issue, apply the fix, and then run the commnad below to redeploy the container Group.\n"
-        echo -e "az container create --resource-group $RESOURCE_GROUP --file acilab.yaml\n"
-    fi
-
-}
 
 
 # Lab scenario 8
