@@ -1045,6 +1045,164 @@ function lab_scenario_10_validation () {
 }
 
 
+# Lab scenario 11
+function lab_scenario_11 () {
+    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
+    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+    check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
+
+    echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
+
+    az container create \
+    --name $ACI_NAME \
+    --resource-group $RESOURCE_GROUP \
+    --image mcr.microsoft.com/azuredocs/aci-helloworld \
+    --ip-address Public \
+    --ports 8080 \
+    -o table &>/dev/null 
+
+
+
+    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
+    
+    PUBLIC_IP=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME --query ipAddress.ip -o tsv 2>/dev/null)
+    PORT=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME --query ipAddress.ports[].port -o tsv 2>/dev/null)
+
+    ERROR_MESSAGE="$(curl $PUBLIC_IP:$PORT 2>&1)"
+    
+    echo -e "\n\n************************************************************************\n"
+    echo -e "\n--> \nIssue description: \n Customer has an ACI already deployed in the resource group $RESOURCE_GROUP\n"
+    echo -e "Customer created the Constinaer Instance using the command:"
+    echo -e "az container create -g <aci_rg> -n <aci_name> --image mcr.microsoft.com/azuredocs/aci-helloworld --ports 8080\n"
+    echo -e "But, the customer is not able to access the Instance using the Public IP and Port. Cx is getting the error message:"
+    echo -e "\n-------------------------------------------------------------------------------------\n"
+    echo -e "$ERROR_MESSAGE"
+    echo -e "\n¯\_(ツ)_/¯"
+    echo -e "\n-------------------------------------------------------------------------------------\n"
+    echo -e "Check the logs for the Container instance using the \"az container logs -n <aci_name> -g <aci_rg>\". Then, verify the Networking configuration of the Container Instance on the Portal and see if there is any mis-configuration.\n"
+    echo -e "Once you find the issue, update the Constinaer Instance using the command:"
+    echo -e "\naz container create -g <aci_rg> -n <aci_name> --image <aci_image> --ports <required_port> --ip-address Public\n"
+    echo -e "\nNote that in order to update a specific property of an existing Container Instance, all other properties should be same. For reference: https://docs.microsoft.com/en-us/azure/container-instances/container-instances-update#update-a-container-group\n"
+}
+
+function lab_scenario_11_validation () {
+    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
+    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
+
+    # UPDATED_PORT=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME --query ipAddress.ports[].port -o tsv)
+    az container show -g $RESOURCE_GROUP -n $ACI_NAME --query ipAddress.ports[].port -o tsv > updated_ports.tsv
+
+    for PORTS in $(cut -f1 updated_ports.tsv)
+    do
+      if [ $PORTS -eq 80 ]
+        then 
+          IS_PORT_CORRECT=true
+      fi
+    done
+
+
+    if [ $IS_PORT_CORRECT ]
+    then
+        echo -e "\n\n========================================================"
+        echo -e '\nContainer instance looks good now!\n'
+    else
+        echo -e "\n--> Error: Scenario $LAB_SCENARIO is still FAILED\n\n"
+        echo -e "Check the logs for the Container instance using the \"az container logs -n <aci_name> -g <aci_rg>\". Then, verify the Networking configuration of the Container Instance on the Portal and see if there is any mis-configuration.\n"
+        echo -e "Once you find the issue, update the Constinaer Instance using the command:"
+        echo -e "\n az container create -g <aci_rg> -n <aci_name> --image <aci_image> --ip-address Public --ports <required_port> --ip-address Public\n"
+        echo -e "\n Note that in order to update a specific property of an existing Container Instance, all other properties should be same. For reference: https://docs.microsoft.com/en-us/azure/container-instances/container-instances-update#update-a-container-group\n"
+    fi
+}
+
+# Lab scenario 12
+function lab_scenario_12 () {
+    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
+    CLIENT_ACI_NAME=${ACI_NAME}-client
+    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+    check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
+
+    echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
+
+    # Create NSG, VNet and Subnet for ACI
+
+    az network nsg create \
+    --name aci-nsg-${USER_ALIAS} \
+    --resource-group $RESOURCE_GROUP &>/dev/null 
+
+    az network nsg rule create --resource-group $RESOURCE_GROUP \
+    --nsg-name aci-nsg-${USER_ALIAS} --name CustomNSGRule \
+    --priority 4096 --source-address-prefixes 10.0.1.0/24 \
+    --source-port-ranges '*' --destination-address-prefixes '*' \
+    --destination-port-ranges 80 8080 --access Deny \
+    --protocol Tcp --description "Deny access on port 80 and 8080." &>/dev/null
+
+    az network vnet create --name aci-vnet-${USER_ALIAS} \
+    --resource-group $RESOURCE_GROUP --address-prefix 10.0.0.0/16 \
+    --subnet-name aci-subnet-${USER_ALIAS} --subnet-prefix 10.0.0.0/24 &>/dev/null 
+
+    az network vnet subnet update --resource-group $RESOURCE_GROUP \
+    --name aci-subnet-${USER_ALIAS} --vnet-name aci-vnet-${USER_ALIAS} \
+    --network-security-group aci-nsg-${USER_ALIAS} &>/dev/null 
+ 
+
+    # Create Subnet for Client ACI
+
+    az network vnet subnet create --name client-subnet-${USER_ALIAS} \
+    --resource-group $RESOURCE_GROUP --vnet-name aci-vnet-${USER_ALIAS} \
+    --address-prefix 10.0.1.0/24 &>/dev/null 
+
+
+    # Create the Server ACI
+    az container create --name $ACI_NAME \
+    --resource-group $RESOURCE_GROUP --image mcr.microsoft.com/azuredocs/aci-helloworld \
+    --vnet aci-vnet-${USER_ALIAS} --subnet aci-subnet-${USER_ALIAS} &>/dev/null 
+
+    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
+
+    SERVER_IP=$(az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME --query ipAddress.ip --output tsv 2>/dev/null)
+
+    az container create --name ${ACI_NAME}-client \
+    --resource-group $RESOURCE_GROUP --image alpine/curl \
+    --command-line "/bin/sh -c 'while true; do wget -T 5 --spider $SERVER_IP; sleep 2; done'" \
+    --vnet aci-vnet-${USER_ALIAS} --subnet client-subnet-${USER_ALIAS} &>/dev/null
+
+    validate_aci_exists $RESOURCE_GROUP $CLIENT_ACI_NAME
+
+    sleep 15
+
+    ERROR_MESSAGE=$(az container logs --resource-group $RESOURCE_GROUP --name $CLIENT_ACI_NAME | tail -3)
+
+    
+    echo -e "\n\n************************************************************************\n"
+    echo -e "\n--> \nIssue description: \nCustomer has 2 Container Instances deployed in different Subnets of the same VNet in resource group $RESOURCE_GROUP. However, the Client ACI is not able to access the Server ACI.\n"
+
+    echo -e "Cx is getting the error message:"
+    echo -e "\n-------------------------------------------------------------------------------------\n"
+    echo -e "$ERROR_MESSAGE"
+    echo -e "\n-------------------------------------------------------------------------------------\n"
+    echo -e "Check the network configuration of both the Container Instances in resource group $RESOURCE_GROUP, and see why the Client ACI is not able to connect to the Server ACI.\n"
+    echo -e "Once you find the issue, update the network configuration to allow access from Client ACI to Server ACI."
+
+}
+
+function lab_scenario_12_validation () {
+    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
+    CLIENT_ACI_NAME=${ACI_NAME}-client
+    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+    validate_aci_exists $RESOURCE_GROUP $CLIENT_ACI_NAME
+
+    CLIENT_LOGS=$(az container logs --resource-group $RESOURCE_GROUP --name $CLIENT_ACI_NAME | tail -3)
+    if echo $CLIENT_LOGS | grep -i 'remote file exists' &>/dev/null
+    then
+        echo -e "\n\n========================================================"
+        echo -e '\nConnectivity between the 2 Container instances looks good now!\n'
+    else
+        echo -e "\n--> Error: Scenario $LAB_SCENARIO is still FAILED\n\n"
+        echo -e "Check the logs for the Container instance using the \"az container logs -n <aci_name> -g <aci_rg>\". Then, verify the Networking configuration of the Server/Client ACI on the Portal and see if there is any mis-configuration.\n"
+        echo -e "\nHint: Both of the Container Instances are Private, and are deployed inside a Virtual Network. Link: https://docs.microsoft.com/en-us/azure/container-instances/container-instances-virtual-network-concepts#scenarios\n"
+    fi
+}
 
 
 
