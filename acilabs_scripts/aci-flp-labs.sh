@@ -147,7 +147,7 @@ function lab_scenario_1 () {
     ACI_CONTAINER_DNS_LABEL=$(tr -dc a-z </dev/urandom | head -c $ACI_LENGTH_STRING)
     ACI_CONTAINER_IMAGE="mcr.microsoft.com/azuredocs/aci-helloworld"
 
-    echo -e "\n--> Deploying cluster for lab${LAB_SCENARIO}...\n"
+    echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
     
     ## Remove any previous aci.yaml file
     rm -rf aci.yaml
@@ -440,7 +440,7 @@ function lab_scenario_5 () {
 
     check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
 
-    echo -e "\n--> Deploying cluster for lab${LAB_SCENARIO}...\n"
+    echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
     
     ## Create Log Analytics WorkSpace
     az monitor log-analytics workspace create \
@@ -543,7 +543,7 @@ function lab_scenario_6 () {
   ACI_PERS_LOCATION=$ACI_RG_LOCATION
   ACI_PERS_SHARE_NAME=acishare 
   
-  echo -e "\n--> Deploying cluster for lab${LAB_SCENARIO}...\n"
+  echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
 
   ## Create RG
   #echo "Create RG"
@@ -1009,7 +1009,7 @@ function lab_scenario_10 () {
     RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
     check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
 
-    echo -e "\n--> Deploying cluster for lab${LAB_SCENARIO}...\n"
+    echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
     az container create \
     --name $ACI_NAME \
     --resource-group $RESOURCE_GROUP \
