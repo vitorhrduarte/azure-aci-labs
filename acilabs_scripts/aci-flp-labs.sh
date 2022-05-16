@@ -1303,6 +1303,85 @@ function lab_scenario_13_validation () {
 
 
 
+# Lab scenario 14
+function lab_scenario_14 () {
+  ACI_SP_NAME="sp-aci-lab14"
+  ACI_NAME="mycontainer"
+  RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+
+  check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
+
+  echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
+
+  ACI_RG_URI=$(az group list \
+   --output json | jq -r ".[] | select ( .name == \"$RESOURCE_GROUP\") | [ .id] | @tsv")
+
+
+  declare -a ARR_SP_DETAILS
+
+  ARR_SP_DETAILS=($(az ad sp create-for-rbac \
+  --name $ACI_SP_NAME \
+  --role Reader \
+  --scopes $ACI_RG_URI 2>/dev/null | jq -r ". | [ .password, .appId , .displayName ] | @tsv"))
+
+  TENANT=$(az account list \
+    --output json | jq -r ".[] | select ( .isDefault == "true" ) | [ .tenantId] | @tsv")
+
+  #AZ_LOGIN_STRING=$(echo "az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT") 
+  #"Login With Another SP"
+  #bash $AZ_LOGIN_STRING &>/dev/null
+
+  #echo "Waiting... 60s"
+  sleep 60
+  
+  # Do the SP Login
+  az login --service-principal --username ${ARR_SP_DETAILS[1]} --password ${ARR_SP_DETAILS[0]} --tenant $TENANT  &>/dev/null
+
+  ## Create Container
+  ERROR_MESSAGE="$(az container create \
+    --resource-group $RESOURCE_GROUP \
+    --name $ACI_NAME \
+    --image mcr.microsoft.com/azure-cli \
+    --command-line "sleep infinity" 2>&1)"  
+
+  echo -e "\n\n************************************************************************\n"
+  echo -e "\n--> Issue description: \n Customer needs to deploy an ACI in the resource group $RESOURCE_GROUP"
+  echo -e "az container create --resource-group $RESOURCE_GROUP --name $ACI_NAME --image mcr.microsoft.com/azure-cli --command-line \"tail -f /dev/null\"\n"
+  echo -e "Cx is getting the error message:"
+  echo -e "\n-------------------------------------------------------------------------------------\n"
+  echo -e "$ERROR_MESSAGE"
+  echo -e "\n-------------------------------------------------------------------------------------\n"
+  echo -e "Once you find the issue, run again the previous command to deploy ACI"
+
+}
+
+
+function lab_scenario_14_validation () {
+  ACI_SP_NAME="sp-aci-lab14"
+  ACI_NAME="mycontainer"
+  RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+
+  ## Test se ACI run with created SP
+  ACI_STATUS=$(az container list \
+    --output json  | jq -r ".[] | select ( .name == \"$ACI_NAME\" ) | select ( .resourceGroup == \"$RESOURCE_GROUP\") | [ .id] | @tsv" | wc -l) 
+
+
+  if [[ "$ACI_STATUS" == "1" ]]
+  then
+        echo -e "\n\n========================================================"
+        echo -e "\nContainer instance $ACI_NAME looks good now!\n"
+  else
+        echo -e "\n--> Error: Scenario $LAB_SCENARIO is still FAILED\n\n"
+        echo -e "Once you find the issue, run agains the $LAB_SCENARIO"
+  fi
+
+}
+
+
+
+
+
+
 
 #if -h | --help option is selected usage will be displayed
 if [ $HELP -eq 1 ]
