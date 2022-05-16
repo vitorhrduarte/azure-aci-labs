@@ -18,9 +18,24 @@ aci-flp-labs usage: aci-flp-labs -l <LAB#> -u <USER_ALIAS> [-v|--validate] [-r|-
 Here is the list of current labs available:
 
 *************************************************************************************
-*        1. ACI deployment on existing resource group fails
-*        2. ACI deployed with wrong image
-*        3. 
+CORE LABS:
+*\t 1. ACI deployment failure configuration
+*\t 2. ACI deployment authorization failed
+*\t 3. ACI connection issue between 2 container groups V1
+*\t 4. ACI deployment failed netwwork configuration V1
+*\t 5. ACI deployment failed with Log analytics
+*\t 6. ACI container create failure with Azure File mount
+*\t 7. ACI deployment failure with Storage account
+*\t 8. ACI container create image pull failure V1
+
+
+EXTRA LABS:
+*\t 9. ACI deployment failure on pre-existing vnet
+*\t 10. ACI container continuous restart issue
+*\t 11. ACI container create image pull failure V2
+*\t 12. ACI deployment failed netwwork configuration V2
+*\t 13. ACI connection issue between 2 container groups V2
+*\t 14. ACI connection issue to container
 *************************************************************************************
 
 "-l|--lab" Lab scenario to deploy (3 possible options)
