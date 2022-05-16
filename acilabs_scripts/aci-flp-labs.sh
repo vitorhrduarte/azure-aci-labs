@@ -281,131 +281,8 @@ function lab_scenario_2_validation () {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Lab scenario 4
-function lab_scenario_4 () {
-    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
-    CLIENT_ACI_NAME=${ACI_NAME}-client
-    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
-    check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
-
-    echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
-
-    # Create NSG, VNet and Subnet for ACI
-
-    az network nsg create \
-    --name aci-nsg-${USER_ALIAS} \
-    --resource-group $RESOURCE_GROUP &>/dev/null 
-
-    az network nsg rule create --resource-group $RESOURCE_GROUP \
-    --nsg-name aci-nsg-${USER_ALIAS} --name CustomNSGRule \
-    --priority 4096 --source-address-prefixes 10.0.1.0/24 \
-    --source-port-ranges '*' --destination-address-prefixes '*' \
-    --destination-port-ranges 80 8080 --access Deny \
-    --protocol Tcp --description "Deny access on port 80 and 8080." &>/dev/null
-
-    az network vnet create --name aci-vnet-${USER_ALIAS} \
-    --resource-group $RESOURCE_GROUP --address-prefix 10.0.0.0/16 \
-    --subnet-name aci-subnet-${USER_ALIAS} --subnet-prefix 10.0.0.0/24 &>/dev/null 
-
-    az network vnet subnet update --resource-group $RESOURCE_GROUP \
-    --name aci-subnet-${USER_ALIAS} --vnet-name aci-vnet-${USER_ALIAS} \
-    --network-security-group aci-nsg-${USER_ALIAS} &>/dev/null 
- 
-
-    # Create Subnet for Client ACI
-
-    az network vnet subnet create --name client-subnet-${USER_ALIAS} \
-    --resource-group $RESOURCE_GROUP --vnet-name aci-vnet-${USER_ALIAS} \
-    --address-prefix 10.0.1.0/24 &>/dev/null 
-
-
-    # Create the Server ACI
-    az container create --name $ACI_NAME \
-    --resource-group $RESOURCE_GROUP --image mcr.microsoft.com/azuredocs/aci-helloworld \
-    --vnet aci-vnet-${USER_ALIAS} --subnet aci-subnet-${USER_ALIAS} &>/dev/null 
-
-    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
-
-    SERVER_IP=$(az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME --query ipAddress.ip --output tsv 2>/dev/null)
-
-    az container create --name ${ACI_NAME}-client \
-    --resource-group $RESOURCE_GROUP --image alpine/curl \
-    --command-line "/bin/sh -c 'while true; do wget -T 5 --spider $SERVER_IP; sleep 2; done'" \
-    --vnet aci-vnet-${USER_ALIAS} --subnet client-subnet-${USER_ALIAS} &>/dev/null
-
-    validate_aci_exists $RESOURCE_GROUP $CLIENT_ACI_NAME
-
-    sleep 15
-
-    ERROR_MESSAGE=$(az container logs --resource-group $RESOURCE_GROUP --name $CLIENT_ACI_NAME | tail -3)
-
-    
-    echo -e "\n\n************************************************************************\n"
-    echo -e "\n--> \nIssue description: \nCustomer has 2 Container Instances deployed in different Subnets of the same VNet in resource group $RESOURCE_GROUP. However, the Client ACI is not able to access the Server ACI.\n"
-
-    echo -e "Cx is getting the error message:"
-    echo -e "\n-------------------------------------------------------------------------------------\n"
-    echo -e "$ERROR_MESSAGE"
-    echo -e "\n-------------------------------------------------------------------------------------\n"
-    echo -e "Check the network configuration of both the Container Instances in resource group $RESOURCE_GROUP, and see why the Client ACI is not able to connect to the Server ACI.\n"
-    echo -e "Once you find the issue, update the network configuration to allow access from Client ACI to Server ACI."
-
-}
-
-function lab_scenario_4_validation () {
-    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
-    CLIENT_ACI_NAME=${ACI_NAME}-client
-    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
-    validate_aci_exists $RESOURCE_GROUP $CLIENT_ACI_NAME
-
-    CLIENT_LOGS=$(az container logs --resource-group $RESOURCE_GROUP --name $CLIENT_ACI_NAME | tail -3)
-    if echo $CLIENT_LOGS | grep -i 'remote file exists' &>/dev/null
-    then
-        echo -e "\n\n========================================================"
-        echo -e '\nConnectivity between the 2 Container instances looks good now!\n'
-    else
-        echo -e "\n--> Error: Scenario $LAB_SCENARIO is still FAILED\n\n"
-        echo -e "Check the logs for the Container instance using the \"az container logs -n <aci_name> -g <aci_rg>\". Then, verify the Networking configuration of the Server/Client ACI on the Portal and see if there is any mis-configuration.\n"
-        echo -e "\nHint: Both of the Container Instances are Private, and are deployed inside a Virtual Network. Link: https://docs.microsoft.com/en-us/azure/container-instances/container-instances-virtual-network-concepts#scenarios\n"
-    fi
-}
-
-# Lab scenario 5
-function lab_scenario_5 () {
+# Lab scenario 3
+function lab_scenario_3 () {
     ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
     CLIENT_ACI_NAME=${ACI_NAME}-client
     RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
@@ -459,7 +336,7 @@ function lab_scenario_5 () {
 
 }
 
-function lab_scenario_5_validation () {
+function lab_scenario_3_validation () {
     ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
     CLIENT_ACI_NAME=${ACI_NAME}-client
     RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
@@ -478,8 +355,10 @@ function lab_scenario_5_validation () {
 }
 
 
-# Lab scenario 6
-function lab_scenario_6 () {
+
+
+# Lab scenario 4
+function lab_scenario_4 () {
     ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
     RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
     check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
@@ -518,7 +397,7 @@ function lab_scenario_6 () {
 
 }
 
-function lab_scenario_6_validation () {
+function lab_scenario_4_validation () {
     ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
     RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
     ACI_EXIST=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME &>/dev/null; echo $?)
@@ -535,104 +414,9 @@ function lab_scenario_6_validation () {
 }
 
 
-# Lab scenario 7
-function lab_scenario_7 () {
-    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
-    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
-    check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
 
-    echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
-
-    # Create VNet and Subnet for ACI
-    az network vnet create --name aci-vnet-${USER_ALIAS} --location eastus \
-    --resource-group $RESOURCE_GROUP --address-prefix 10.0.0.0/16 \
-    --subnet-name aci-subnet-${USER_ALIAS} --subnet-prefix 10.0.0.0/24 &>/dev/null 
-
-    # Create Route Table and Custom Route
-    az network route-table create --name custom-rtb-${USER_ALIAS} \
-    --resource-group $RESOURCE_GROUP --location eastus &>/dev/null
-
-    az network route-table route create --resource-group $RESOURCE_GROUP \
-    --route-table-name custom-rtb-${USER_ALIAS} -n unwanted-custom-route --next-hop-type VirtualAppliance \
-    --address-prefix 0.0.0.0/0 --next-hop-ip-address 10.0.100.4 &>/dev/null
-
-    # Update Subnet to use the Custom Route Table
-    az network vnet subnet update --name aci-subnet-${USER_ALIAS} \
-    --resource-group $RESOURCE_GROUP --vnet-name aci-vnet-${USER_ALIAS} \
-    --route-table custom-rtb-${USER_ALIAS} &>/dev/null
-
-    # Create Public IP for NAT GW
-    az network public-ip create --name nat-gw-pip-${USER_ALIAS} \
-    --resource-group ${RESOURCE_GROUP} --sku standard \
-    --allocation static --location eastus &>/dev/null
-
-    # Create NAT GW
-    az network nat gateway create --resource-group $RESOURCE_GROUP \
-    --name nat-gw-${USER_ALIAS} --public-ip-addresses nat-gw-pip-${USER_ALIAS} \
-    --idle-timeout 10 --location eastus &>/dev/null
-
-    # Create the Server ACI
-    az container create --resource-group $RESOURCE_GROUP \
-    --name $ACI_NAME --image mcr.microsoft.com/azuredocs/aci-tutorial-sidecar \
-    --command-line "curl -s --connect-timeout 5 http://checkip.dyndns.org" --restart-policy OnFailure \
-    --vnet aci-vnet-${USER_ALIAS} --subnet aci-subnet-${USER_ALIAS} \
-    --location eastus --no-wait &>/dev/null
-
-    sleep 15
-
-    # Update Subnet to use NAT GW
-    # az network vnet subnet update --resource-group $RESOURCE_GROUP  \
-    # --vnet-name aci-vnet-${USER_ALIAS} --name aci-subnet-${USER_ALIAS} \
-    # --nat-gateway nat-gw-${USER_ALIAS} &>/dev/null
-
-    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
-    
-    echo -e "\n\n************************************************************************\n"
-    echo -e "\n--> \nIssue description: \nCustomer has deployed a Container Instances in a VNet in resource group $RESOURCE_GROUP. Cx wants to use a Static Outbound IP for Container Instance, and thus, is trying to use a NAT Gateway for outbound flow, as indicated here: https://docs.microsoft.com/en-in/azure/container-instances/container-instances-nat-gateway\n"
-    echo -e "Customer has successfully deployed the NAT Gateway and added a Public IP to it.\n"
-    echo -e "However, customer is having issues in establishing outbound connectivity from the ACI, using NAT Gateway.\n"
-    echo -e "The Outbound Cnnection is not going through, and the Container keeps restarting."
-
-    echo -e "Check the network configuration for the Container Instances in resource group $RESOURCE_GROUP, and see why the outbound connectivity is failing.\n"
-    echo -e "Once you find the issue, update the network components to allow oubtound access from Client ACI, and that the Outbound connection uses the NAT Gateway."
-
-}
-
-function lab_scenario_7_validation () {
-    
-    VALIDATION_ACI_NAME=validation-aci-ex${LAB_SCENARIO}-${USER_ALIAS}
-    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
-    # validate_aci_exists $RESOURCE_GROUP $VALIDATION_ACI_NAME
-
-    NG_PUBLIC_IP="$(az network public-ip show --name nat-gw-pip-${USER_ALIAS} \
-    --resource-group $RESOURCE_GROUP --query ipAddress --output tsv)" &>/dev/null
-
-    az container create --resource-group $RESOURCE_GROUP \
-    --name $VALIDATION_ACI_NAME --image mcr.microsoft.com/azuredocs/aci-tutorial-sidecar \
-    --command-line "curl -s --connect-timeout 5 http://checkip.dyndns.org" --restart-policy OnFailure \
-    --vnet aci-vnet-${USER_ALIAS} --subnet aci-subnet-${USER_ALIAS} \
-    --location eastus &>/dev/null
-
-    MESSAGE=$(az container logs -n $VALIDATION_ACI_NAME -g $RESOURCE_GROUP)
-    if echo $MESSAGE | grep -i $NG_PUBLIC_IP &>/dev/null
-    then
-        echo -e "\n\n========================================================"
-        echo -e '\nOutbound Connectivity from Container Instance looks good now, and is using the NAT Gateway.\n'
-        az container delete --name $VALIDATION_ACI_NAME --resource-group $RESOURCE_GROUP --yes &>/dev/null
-        
-    else
-        echo -e "\n--> Error: Scenario $LAB_SCENARIO is still FAILED\n\n"
-        echo -e "Check the network configuration of the Container Instances in resource group $RESOURCE_GROUP, and see why the outbound connectivity is failing.\n"
-        echo -e "Once you find the issue, update the network components to allow oubtound access from Client ACI, and that the Outbound connection uses the NAT Gateway."
-       az container delete --name $VALIDATION_ACI_NAME --resource-group $RESOURCE_GROUP --yes &>/dev/null
-    fi
-}
-
-
-
-
-# Lab scenario 8
-function lab_scenario_8 () {
+# Lab scenario 5
+function lab_scenario_5 () {
     ACI_NAME="appcontaineryaml"
     RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
     LOG_WKS_NAME=aci-wks-labs-ex-${LAB_SCENARIO}-${USER_ALIAS}
@@ -700,7 +484,7 @@ EOF
 
 }
 
-function lab_scenario_8_validation () {
+function lab_scenario_5_validation () {
     
     ACI_NAME="appcontaineryaml"
     RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
@@ -725,18 +509,18 @@ function lab_scenario_8_validation () {
 
 
 
-# Lab scenario 11
-function lab_scenario_11 () {
+# Lab scenario 6
+function lab_scenario_6 () {
 
 
   ACI_RG_NAME=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
   ACI_RG_LOCATION=$LOCATION
-  ACI_NAME="lab11-container"
-  ACI_VNET_NAME="vnet-lab11"
+  ACI_NAME="lab6-container"
+  ACI_VNET_NAME="vnet-lab6"
   ACI_VNET_PREFIX="10.0.0.0/16"
-  ACI_SNET_NAME="snet-lab11"
+  ACI_SNET_NAME="snet-lab6"
   ACI_SNET_PREFIX="10.0.0.0/24"
-  ACI_NSG_NAME="lab11-nsg"
+  ACI_NSG_NAME="lab6-nsg"
   ACI_PRIV_IP="10.0.0.4"
  
  
@@ -857,10 +641,10 @@ function lab_scenario_11 () {
 
 
 
-function lab_scenario_11_validation () {
+function lab_scenario_6_validation () {
   
    ACI_RG_NAME=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
-   ACI_NAME="lab11-container"
+   ACI_NAME="lab6-container"
 
    declare -a ARR_ACI
 
@@ -885,13 +669,13 @@ function lab_scenario_11_validation () {
 }
 
 
-# Lab scenario 12
-function lab_scenario_12 () {
+# Lab scenario 7
+function lab_scenario_7 () {
 
   # Change these four parameters as needed
   ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
   ACI_PERS_RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
-  ACI_PERS_STORAGE_ACCOUNT_NAME=acilab12gits$RANDOM
+  ACI_PERS_STORAGE_ACCOUNT_NAME=acilab7gits$RANDOM
   ACI_PERS_LOCATION=$LOCATION
   ACI_PERS_SHARE_NAME=acishare
   ACI_DNS_NAME="$ACI_PERS_STORAGE_ACCOUNT_NAME"
@@ -993,7 +777,7 @@ EOF
 }
 
 
-function lab_scenario_12_validation () {
+function lab_scenario_7_validation () {
 
    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
@@ -1017,85 +801,7 @@ function lab_scenario_12_validation () {
 
 
 
-
-# Lab scenario 13
-function lab_scenario_13 () {
-    #Set Variables
-    ACI_NAME=aci-labs-ex$LAB_SCENARIO-$USER_ALIAS
-    RESOURCE_GROUP=aci-labs-ex$LAB_SCENARIO-rg-$USER_ALIAS
-    check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
-
-    SERVICEPRINCIPAL_NAME=ACILab$LAB_SCENARIO-$USER_ALIAS-$RANDOM$RANDOM
-    ACR_NAME=lab${LAB_SCENARIO}acr$USER_ALIAS$RANDOM 
-    ACRLoginServer=$ACR_NAME.azurecr.io
-    ContainerImage=azuredocs/aci-helloworld:latet
-
-    echo -e "\n--> Creating resources for Lab$LAB_SCENARIO...\n"
-
-    #create ACR for repository
-    az acr create --resource-group $RESOURCE_GROUP --name $ACR_NAME --sku Basic --output none --only-show-errors
-
-    #import image to ACR
-    az acr import --name $ACR_NAME --source mcr.microsoft.com/azuredocs/aci-helloworld --output none --only-show-errors
-
-    #Create Service Principal and get password
-    ACILabSPPW=$(az ad sp create-for-rbac --name $SERVICEPRINCIPAL_NAME --scopes $(az acr show --name $ACR_NAME --query id --output tsv) --role acrpull --query "password" --output tsv --only-show-errors)
-
-    #Get AppID for SP
-    export ACILabSPAppID=$(az ad sp list --display-name $SERVICEPRINCIPAL_NAME --query [].appId -o tsv --only-show-errors)
-
-#Create YAML file for deployment
-cat <<EOF > acilab.yaml
-apiVersion: '2021-07-01'
-location: $LOCATION
-name: $ACI_NAME
-properties:
-  containers:
-  - name: $ACI_NAME
-    properties:
-      image: ${ACRLoginServer}/${ContainerImage}
-      ports:
-      - port: 80
-        protocol: TCP
-      resources:
-        requests:
-          cpu: 1.0
-          memoryInGB: 1.5
-  ipAddress:
-    type: Public
-    ports:
-    - protocol: tcp
-      port: '80'
-  osType: Linux
-  restartPolicy: Always
-  imageRegistryCredentials:
-  - server: ${ACRLoginServer}
-    username: $ACILabSPAppID
-    password: $ACILabSPPW
-tags: null
-type: Microsoft.ContainerInstance/containerGroups
-EOF
-
-    #Create Container Group using yaml     
-    echo -e "\n--> Deploying Container Group for lab$LAB_SCENARIO...\n"
-    
-    ERROR_MESSAGE="$(az container create  --resource-group $RESOURCE_GROUP --file acilab.yaml 2>&1)"
-    
-    #Present Lab scenario
-    echo -e "\n\n************************************************************************\n"
-    echo -e "\n--> Issue description:"
-    echo -e "Customer is attempting to deploy Container Group $ACI_NAME in the resource group $RESOURCE_GROUP but is failing to pull the image from registry $ACR_NAME."
-    echo -e "Customer is getting the error message:"
-    echo -e "\n-------------------------------------------------------------------------------------\n"
-    echo -e "$ERROR_MESSAGE"
-    echo -e "\n-------------------------------------------------------------------------------------\n"
-    echo -e "The yaml file acilab.yaml is in your current path. Use our tools to identify the cause of the customer's issue."
-    echo -e "Once you find the cause of the issue, apply the fix, and then run the commnad below to redeploy the container Group.\n"
-    echo -e "az container create --resource-group $RESOURCE_GROUP --file acilab.yaml"
-    echo -e "\n\n************************************************************************\n"
-}
-
-function lab_scenario_13_validation () {
+function lab_scenario_8_validation () {
     ACI_NAME=aci-labs-ex$LAB_SCENARIO-$USER_ALIAS
     RESOURCE_GROUP=aci-labs-ex$LAB_SCENARIO-rg-$USER_ALIAS
     validate_aci_exists $RESOURCE_GROUP $ACI_NAME
@@ -1118,8 +824,8 @@ function lab_scenario_13_validation () {
 }
 
 
-# Lab scenario 14
-function lab_scenario_14 () {
+# Lab scenario 8
+function lab_scenario_8 () {
     #Set Variables
     ACI_NAME=aci-labs-ex$LAB_SCENARIO-$USER_ALIAS
     RESOURCE_GROUP=aci-labs-ex$LAB_SCENARIO-rg-$USER_ALIAS
@@ -1196,7 +902,7 @@ EOF
 
 }
 
-function lab_scenario_14_validation () {
+function lab_scenario_8_validation () {
     ACI_NAME=aci-labs-ex$LAB_SCENARIO-$USER_ALIAS
     RESOURCE_GROUP=aci-labs-ex$LAB_SCENARIO-rg-$USER_ALIAS
     validate_aci_exists $RESOURCE_GROUP $ACI_NAME
@@ -1217,6 +923,25 @@ function lab_scenario_14_validation () {
         echo -e "az container create --resource-group $RESOURCE_GROUP --file acilab.yaml\n"
     fi
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
