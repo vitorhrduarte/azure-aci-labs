@@ -918,7 +918,131 @@ function lab_scenario_8_validation () {
 
 
 
+## EXTRA LABS
+# Lab scenario 9
+function lab_scenario_9 () {
+    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
+    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+    check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
 
+    echo -e "\n--> Deploying resources for lab${LAB_SCENARIO}...\n"
+
+    az container create \
+    --name $ACI_NAME \
+    --resource-group $RESOURCE_GROUP \
+    --image mcr.microsoft.com/azuredocs/aci-helloworld \
+    --vnet aci-vnet-lab200aci \
+    --vnet-address-prefix 10.0.0.0/16 \
+    --subnet aci-subnet-lab200aci \
+    --subnet-address-prefix 10.0.0.0/24 \
+    -o table
+
+    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
+    
+    SUBNET_ID=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME --query subnetIds[].id -o tsv)
+
+cat <<EOF > aci.yaml
+apiVersion: '2021-07-01'
+location: $LOCATION
+name: appcontaineryaml
+properties:
+  containers:
+  - name: appcontaineryaml
+    properties:
+      image: mcr.microsoft.com/azuredocs/aci-helloworld
+      ports:
+      - port: 80
+        protocol: TCP
+      resources:
+        requests:
+          cpu: 1.0
+          memoryInGB: 1.5
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: tcp
+      port: '80'
+  osType: Linux
+  restartPolicy: Always
+  subnetIds:
+    - id: $SUBNET_ID
+      name: default
+tags: null
+type: Microsoft.ContainerInstance/containerGroups
+EOF
+
+    ERROR_MESSAGE="$(az container create --resource-group $RESOURCE_GROUP --file aci.yaml 2>&1)"
+    
+    echo -e "\n\n************************************************************************\n"
+    echo -e "\n--> Issue description: \n Customer has an ACI alredy deployed in the resource group $RESOURCE_GROUP and he wants to deploy another one in the same resource group using the following:"
+    echo -e "az container create --resource-group $RESOURCE_GROUP --file aci.yaml\n"
+    echo -e "Cx is getting the error message:"
+    echo -e "\n-------------------------------------------------------------------------------------\n"
+    echo -e "$ERROR_MESSAGE"
+    echo -e "\n-------------------------------------------------------------------------------------\n"
+    echo -e "The yaml file aci.yaml is in your current path, you have to modified it in order to be able to deploy the second container instance \"appcontaineryaml\"\n"
+    echo -e "Once you find the issue, update the aci.yaml file and run the commnad:"
+    echo -e "az container create --resource-group $RESOURCE_GROUP --file aci.yaml\n"
+}
+
+function lab_scenario_9_validation () {
+    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
+    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
+
+    ACI_STATUS=$(az container show -g $RESOURCE_GROUP -n appcontaineryaml &>/dev/null; echo $?)
+    if [ $ACI_STATUS -eq 0 ]
+    then
+        echo -e "\n\n========================================================"
+        echo -e '\nContainer instance "appcontaineryaml" looks good now!\n'
+    else
+        echo -e "\n--> Error: Scenario $LAB_SCENARIO is still FAILED\n\n"
+        echo -e "The yaml file aci.yaml is in your current path, you have to modified it in order to be able to deploy the second container instance \"appcontaineryaml\"\n"
+        echo -e "Once you find the issue, update the aci.yaml file and run the commnad:"
+        echo -e "az container create --resource-group $RESOURCE_GROUP --file aci.yaml\n"
+    fi
+}
+
+# Lab scenario 10
+function lab_scenario_10 () {
+    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
+    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+    check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
+
+    echo -e "\n--> Deploying cluster for lab${LAB_SCENARIO}...\n"
+    az container create \
+    --name $ACI_NAME \
+    --resource-group $RESOURCE_GROUP \
+    --image alpine \
+    --ports 80 \
+    -o table &>/dev/null
+
+    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
+    ACI_URI=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME --query id -o tsv 2>/dev/null)
+    
+    echo -e "\n\n********************************************************"
+    echo -e "\n--> Issue description: \nAn ACI has been deployed with name $ACI_NAME in the resourece group $RESOURCE_GROUP, and it keeps restarting."
+    echo -e "Looks like it was deployed with the wrong image."
+    echo -e "You have to update the ACI to change the image to nginx.\n"
+    echo -e "ACI URI=${ACI_URI}\n"
+}
+
+function lab_scenario_10_validation () {
+    ACI_NAME=aci-labs-ex${LAB_SCENARIO}-${USER_ALIAS}
+    RESOURCE_GROUP=aci-labs-ex${LAB_SCENARIO}-rg-${USER_ALIAS}
+    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
+
+    ACI_IMAGE="$(az container show -g $RESOURCE_GROUP -n $ACI_NAME --query containers[].image -o tsv)"
+    RESTART_COUNT="$(az container show -g $RESOURCE_GROUP -n $ACI_NAME --query containers[].instanceView.restartCount -o tsv)"
+    ACI_STATUS=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME &>/dev/null; echo $?)
+    if [ $ACI_STATUS -eq 0 ] && [[ "$ACI_IMAGE" == "nginx"* ]] && [ $RESTART_COUNT -eq 0 ]
+    then
+        echo -e "\n\n========================================================"
+        echo -e "\nContainer instance \"${ACI_NAME}\" looks good now!\n"
+    else
+        echo -e "\n--> Error: Scenario $LAB_SCENARIO is still FAILED\n\n"
+    fi
+}
 
 
 
