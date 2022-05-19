@@ -19,23 +19,23 @@ Here is the list of current labs available:
 
 *************************************************************************************
 CORE LABS:
-*\t 1. ACI deployment failure configuration
-*\t 2. ACI deployment authorization failed
-*\t 3. ACI connection issue between 2 container groups V1
-*\t 4. ACI deployment failed netwwork configuration V1
-*\t 5. ACI deployment failed with Log analytics
-*\t 6. ACI container create failure with Azure File mount
-*\t 7. ACI deployment failure with Storage account
-*\t 8. ACI container create image pull failure V1
-
+* 1. ACI deployment failure configuration
+* 2. ACI deployment authorization failed
+* 3. ACI connection issue between 2 container groups V1
+* 4. ACI deployment failed netwwork configuration V1
+* 5. ACI deployment failed with Log analytics
+* 6. ACI container create failure with Azure File mount
+* 7. ACI deployment failure with Storage account
+* 8. ACI container create image pull failure V1Extra Labs:
 
 EXTRA LABS:
-*\t 9. ACI deployment failure on pre-existing vnet
-*\t 10. ACI container continuous restart issue
-*\t 11. ACI container create image pull failure V2
-*\t 12. ACI deployment failed netwwork configuration V2
-*\t 13. ACI connection issue between 2 container groups V2
-*\t 14. ACI connection issue to container
+* 9.  ACI deployment failure on pre-existing vnet
+* 10. ACI container continuous restart issue
+* 11. ACI connection issue to container
+* 12. ACI deployment failed netwwork configuration V2
+* 13. ACI connection issue between 2 container groups V2
+* 14. ACI container create image pull failure V2
+
 *************************************************************************************
 
 "-l|--lab" Lab scenario to deploy (3 possible options)
