@@ -1302,6 +1302,110 @@ function lab_scenario_13_validation () {
 
 
 
+# Lab scenario 14
+function lab_scenario_14 () {
+    #Set Variables
+    ACI_NAME=aci-labs-ex$LAB_SCENARIO-$USER_ALIAS
+    RESOURCE_GROUP=aci-labs-ex$LAB_SCENARIO-rg-$USER_ALIAS
+    check_resourcegroup_cluster $RESOURCE_GROUP $ACI_NAME
+
+    SERVICEPRINCIPAL_NAME=ACILab$LAB_SCENARIO-$USER_ALIAS-$RANDOM$RANDOM
+    ACR_NAME=lab${LAB_SCENARIO}acr$USER_ALIAS$RANDOM 
+    ACRLoginServer=$ACR_NAME.azurecr.io
+    ContainerImage=azuredocs/aci-helloworld:latest
+
+    echo -e "\n--> Creating resources for Lab$LAB_SCENARIO...\n"
+
+    #create ACR for repository
+    az acr create --resource-group $RESOURCE_GROUP --name $ACR_NAME --sku Basic --output none --only-show-errors
+
+    #import image to ACR
+    az acr import --name $ACR_NAME --source mcr.microsoft.com/azuredocs/aci-helloworld --output none --only-show-errors
+
+    #Create Service Principal and get password
+    ACILabSPPW=$(az ad sp create-for-rbac --name $SERVICEPRINCIPAL_NAME --scopes $(az acr show --name $ACR_NAME --query id --output tsv) --role acrdelete --query "password" --output tsv --only-show-errors)
+
+    #Get AppID for SP
+    ACILabSPAppID=$(az ad sp list --display-name $SERVICEPRINCIPAL_NAME --query [].appId -o tsv --only-show-errors)
+
+#Create YAML file for deployment
+cat <<EOF > acilab.yaml
+apiVersion: '2021-07-01'
+location: $LOCATION
+name: $ACI_NAME
+properties:
+  containers:
+  - name: $ACI_NAME
+    properties:
+      image: $ACRLoginServer/$ContainerImage
+      ports:
+      - port: 80
+        protocol: TCP
+      resources:
+        requests:
+          cpu: 1.0
+          memoryInGB: 1.5
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: tcp
+      port: '80'
+  osType: Linux
+  restartPolicy: Always
+  imageRegistryCredentials:
+  - server: $ACRLoginServer
+    username: $ACILabSPAppID
+    password: $ACILabSPPW
+tags: null
+type: Microsoft.ContainerInstance/containerGroups
+EOF
+
+    #Create Container Group using yaml     
+    echo -e "\n--> Deploying Container Group for lab$LAB_SCENARIO...\n"
+    
+    ERROR_MESSAGE="$(az container create  --resource-group $RESOURCE_GROUP --file acilab.yaml 2>&1)"
+    
+    #Present Lab scenario
+    echo -e "\n\n************************************************************************\n"
+    echo -e "\n--> Issue description:"
+    echo -e "Customer is attempting to deploy Container Group $ACI_NAME in the resource group $RESOURCE_GROUP but is failing to pull the image from registry $ACR_NAME."
+    echo -e "Customer is getting the error message:"
+    echo -e "\n-------------------------------------------------------------------------------------\n"
+    echo -e "$ERROR_MESSAGE"
+    echo -e "\n-------------------------------------------------------------------------------------\n"
+    echo -e "The yaml file acilab.yaml is in your current path. Use our tools to identify the cause of the customer's issue."
+    echo -e "Once you find the cause of the issue, apply the fix, and then run the commnad below to redeploy the container Group.\n"
+    echo -e "az container create --resource-group $RESOURCE_GROUP --file acilab.yaml"
+    echo -e "\n\n************************************************************************\n"
+
+}
+
+function lab_scenario_14_validation () {
+    ACI_NAME=aci-labs-ex$LAB_SCENARIO-$USER_ALIAS
+    RESOURCE_GROUP=aci-labs-ex$LAB_SCENARIO-rg-$USER_ALIAS
+    validate_aci_exists $RESOURCE_GROUP $ACI_NAME
+
+    
+    ACI_STATUS=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME &>/dev/null; echo $?)
+    if [ $ACI_STATUS -eq 0 ]
+    then
+        echo -e "\n\n========================================================"
+        echo -e "\nContainer Group $ACI_NAME looks good now!\n"
+        echo -e "Please run the following commands to delete the resources for the lab."
+        echo -e "az group delete --name <RESOURCE_GROUP> --yes"
+        echo -e "az ad sp delete --id <ACILabSPAppID>"
+    else
+        echo -e "\n--> Error: Scenario $LAB_SCENARIO is still FAILED\n\n"
+    echo -e "The yaml file acilab.yaml is in your current path. Use our tools to identify the cause of the customer's issue."
+    echo -e "Once you find the cause of the issue, apply the fix, and then run the commnad below to redeploy the container Group.\n"
+        echo -e "az container create --resource-group $RESOURCE_GROUP --file acilab.yaml\n"
+    fi
+}
+
+
+
+
+
 
 
 #if -h | --help option is selected usage will be displayed
