@@ -1312,7 +1312,7 @@ function lab_scenario_14 () {
     SERVICEPRINCIPAL_NAME=ACILab$LAB_SCENARIO-$USER_ALIAS-$RANDOM$RANDOM
     ACR_NAME=lab${LAB_SCENARIO}acr$USER_ALIAS$RANDOM 
     ACRLoginServer=$ACR_NAME.azurecr.io
-    ContainerImage=azuredocs/aci-helloworld:latest
+    ContainerImage=azuredocs/aci-helloworld:latet
 
     echo -e "\n--> Creating resources for Lab$LAB_SCENARIO...\n"
 
@@ -1323,10 +1323,10 @@ function lab_scenario_14 () {
     az acr import --name $ACR_NAME --source mcr.microsoft.com/azuredocs/aci-helloworld --output none --only-show-errors
 
     #Create Service Principal and get password
-    ACILabSPPW=$(az ad sp create-for-rbac --name $SERVICEPRINCIPAL_NAME --scopes $(az acr show --name $ACR_NAME --query id --output tsv) --role acrdelete --query "password" --output tsv --only-show-errors)
+    ACILabSPPW=$(az ad sp create-for-rbac --name $SERVICEPRINCIPAL_NAME --scopes $(az acr show --name $ACR_NAME --query id --output tsv) --role acrpull --query "password" --output tsv --only-show-errors)
 
     #Get AppID for SP
-    ACILabSPAppID=$(az ad sp list --display-name $SERVICEPRINCIPAL_NAME --query [].appId -o tsv --only-show-errors)
+    export ACILabSPAppID=$(az ad sp list --display-name $SERVICEPRINCIPAL_NAME --query [].appId -o tsv --only-show-errors)
 
 #Create YAML file for deployment
 cat <<EOF > acilab.yaml
@@ -1337,7 +1337,7 @@ properties:
   containers:
   - name: $ACI_NAME
     properties:
-      image: $ACRLoginServer/$ContainerImage
+      image: ${ACRLoginServer}/${ContainerImage}
       ports:
       - port: 80
         protocol: TCP
@@ -1353,7 +1353,7 @@ properties:
   osType: Linux
   restartPolicy: Always
   imageRegistryCredentials:
-  - server: $ACRLoginServer
+  - server: ${ACRLoginServer}
     username: $ACILabSPAppID
     password: $ACILabSPPW
 tags: null
@@ -1377,7 +1377,6 @@ EOF
     echo -e "Once you find the cause of the issue, apply the fix, and then run the commnad below to redeploy the container Group.\n"
     echo -e "az container create --resource-group $RESOURCE_GROUP --file acilab.yaml"
     echo -e "\n\n************************************************************************\n"
-
 }
 
 function lab_scenario_14_validation () {
@@ -1385,7 +1384,6 @@ function lab_scenario_14_validation () {
     RESOURCE_GROUP=aci-labs-ex$LAB_SCENARIO-rg-$USER_ALIAS
     validate_aci_exists $RESOURCE_GROUP $ACI_NAME
 
-    
     ACI_STATUS=$(az container show -g $RESOURCE_GROUP -n $ACI_NAME &>/dev/null; echo $?)
     if [ $ACI_STATUS -eq 0 ]
     then
@@ -1400,8 +1398,8 @@ function lab_scenario_14_validation () {
     echo -e "Once you find the cause of the issue, apply the fix, and then run the commnad below to redeploy the container Group.\n"
         echo -e "az container create --resource-group $RESOURCE_GROUP --file acilab.yaml\n"
     fi
-}
 
+}
 
 
 
